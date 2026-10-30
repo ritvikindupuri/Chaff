@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { scoreBeacon, type BeaconSignals } from "@/lib/fingerprint";
 import { ensureChaffIndex, indexEvent } from "@/lib/es-chaff.server";
+import { readBeacon } from "@/lib/beacon-input";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/api/public/beacon")({
       POST: async ({ request }) => {
         let body: BeaconSignals;
         try {
-          body = await request.json();
+          body = await readBeacon(request);
         } catch {
           return new Response(JSON.stringify({ error: "invalid json" }), {
             status: 400,
