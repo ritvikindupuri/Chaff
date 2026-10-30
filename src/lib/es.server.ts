@@ -49,6 +49,8 @@ export function assertSafeEsEndpoint(endpoint: string): void {
   }
   if (u.protocol !== "https:") throw new Error("Elasticsearch endpoint must use https://");
   if (!u.hostname) throw new Error("Invalid Elasticsearch endpoint host");
+  if (u.username || u.password || u.search || u.hash)
+    throw new Error("Elasticsearch endpoint must not contain credentials, query, or fragment");
   if (isBlockedHostname(u.hostname)) throw new Error("Elasticsearch endpoint host is not allowed");
 }
 
@@ -60,6 +62,9 @@ export async function esRequest<T = unknown>(
   assertSafeEsEndpoint(auth.endpoint);
   const url = `${normalizeEndpoint(auth.endpoint)}${path.startsWith("/") ? "" : "/"}${path}`;
   const res = await fetch(url, {
+    // Do not follow a public endpoint's redirect to an internal service or leak its API key.
+    redirect: "error",
+    signal: AbortSignal.timeout(15_000),
     method: init?.method ?? (init?.body ? "POST" : "GET"),
     headers: {
       "Content-Type": "application/json",
