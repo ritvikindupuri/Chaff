@@ -32,13 +32,13 @@ graph TD
     %% Core Services Layer
     ChaffAgent[Chaff AI Agent<br/>Gemini via Lovable Cloud]
     ESConnect[Elasticsearch Connector]
-    FirecrawlApi[Firecrawl Integration<br/>Honeypot/Harvest Scraper]
+    FirecrawlApi[Firecrawl Integration<br/>Onboarding Site Scanner]
     MCPServer[MCP Server<br/>Model Context Protocol]
 
     %% Internal Connections
     Server <-->|AI Prompts & Tool Calling| ChaffAgent
     Server <-->|Query Logs & Analytics| ESConnect
-    Server <-->|Scrape & Create Traps| FirecrawlApi
+    Server <-->|Scan Site During Onboarding| FirecrawlApi
     Server <-->|Context Queries| MCPServer
 
     %% External Data Sources
@@ -56,7 +56,7 @@ graph TD
 2. **Connecting to External Data:** The user inputs their Elasticsearch credentials. The server tests the connection and securely saves the configuration.
 3. **Data Analysis via Chaff Agent:** The user queries the Chaff Agent. The Agent constructs a system prompt and loops through native tools (`search_logs`, `sample_requests`) to query the Customer's Elasticsearch logs directly via the backend server functions.
 4. **Recording Threats:** The Agent identifies bots and records findings to the Supabase database using the `record_threat` tool. The React frontend visualizes these on the Dashboard.
-5. **Honeypot Creation:** To proactively catch bots, Chaff uses the Firecrawl API to crawl target sites and generate deceptive trap pages.
+5. **Honeypot Creation:** To proactively catch bots, Chaff creates unique trap URLs (a decoy pricing page served at `/trap/<slug>`) that you link invisibly from your site; any visit is flagged as a bot. Separately, Firecrawl scans your site during onboarding to detect its stack and exposed admin/login/API paths.
 6. **Block Rules & Mitigation:** Identified threats result in Block Rules stored in Supabase, ready to be exported to external WAFs.
 7. **Extensibility:** The MCP (Model Context Protocol) Server exposes threat intelligence context to local AI developer tools.
 
@@ -195,12 +195,12 @@ With data flowing, it's time to investigate.
 ### Step 5: Deploy Honeypots
 
 1. Click on the **"Honeypots"** tab.
-2. Enter a target URL (your main website URL). Chaff will utilize Firecrawl to analyze your site's structure.
-3. Generate deceptive Trap pages (e.g., a fake `/admin/login` page). Deploy these traps on your site. Any traffic that hits these hidden URLs will be immediately flagged as malicious in your dashboard.
+2. Enter a label and click **New trap** to create a unique trap URL (a decoy pricing page).
+3. Share the trap URL where only crawlers will find it (sitemap, robots.txt, hidden links). Any traffic that hits these hidden URLs will be immediately flagged as malicious in your dashboard.
 
 ### Step 6: Create Campaigns & MCP
 
-- **Campaigns:** Navigate to the **Campaigns** tab to set up long-running monitors for specific endpoints, allowing you to track suspicious activity over days or weeks.
+- **Campaigns:** Navigate to the **Campaigns** tab and click **Re-cluster** to group related bot activity into campaigns, then track them, mark them as monitoring or resolved, and export block rules.
 - **MCP:** Use the **MCP** tab to expose Chaff's threat intelligence context directly to external AI assistants (like Cursor), enabling you to ask your local IDE questions about active threats.
 
 ### Step 7: Live View
